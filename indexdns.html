@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bloomreach DNS Checker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --yellow: #FFED00;
+      --black: #0a0a0a;
+      --white: #ffffff;
+      --gray-50: #fafafa;
+      --gray-100: #f4f4f5;
+      --gray-200: #e4e4e7;
+      --gray-400: #a1a1aa;
+      --gray-600: #52525b;
+      --gray-800: #27272a;
+      --green: #22c55e;
+      --green-bg: #f0fdf4;
+      --amber: #f59e0b;
+      --amber-bg: #fffbeb;
+      --red: #ef4444;
+      --red-bg: #fef2f2;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #f0f0ee;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 16px 60px;
+      color: var(--black);
+    }
+
+    .page { width: 100%; max-width: 700px; }
+
+    .wordmark {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding: 0 2px;
+    }
+    .wordmark-text { font-size: 15px; font-weight: 600; color: var(--gray-800); letter-spacing: -0.2px; }
+    .wordmark-text span { font-weight: 400; color: var(--gray-400); }
+
+    .card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.06);
+    }
+
+    .card-header {
+      background: var(--yellow);
+      padding: 20px 24px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .card-header i { font-size: 22px; color: var(--black); }
+    .header-title { font-size: 17px; font-weight: 600; color: var(--black); letter-spacing: -0.3px; }
+    .header-sub { font-size: 13px; color: rgba(0,0,0,0.55); margin-top: 1px; }
+
+    .card-body { padding: 24px; }
+
+    .form-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gray-400);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .input-row { display: flex; gap: 8px; margin-bottom: 10px; }
+    .domain-input {
+      flex: 1;
+      height: 42px;
+      padding: 0 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--gray-200);
+      font-size: 14px;
+      font-family: 'IBM Plex Mono', monospace;
+      background: var(--gray-50);
+      color: var(--black);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .domain-input:focus {
+      outline: none;
+      border-color: var(--yellow);
+      box-shadow: 0 0 0 3px rgba(255,237,0,0.2);
+      background: var(--white);
+    }
+    .check-btn {
+      height: 42px;
+      padding: 0 22px;
+      border-radius: var(--radius-md);
+      background: var(--black);
+      color: var(--yellow);
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: opacity 0.15s, transform 0.1s;
+      white-space: nowrap;
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    .check-btn:hover { opacity: 0.85; }
+    .check-btn:active { transform: scale(0.98); }
+    .check-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .dkim-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .dkim-label { font-size: 12px; color: var(--gray-600); white-space: nowrap; display: flex; align-items: center; gap: 5px; }
+    .dkim-input {
+      height: 36px;
+      padding: 0 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--gray-200);
+      font-size: 13px;
+      font-family: 'IBM Plex Mono', monospace;
+      background: var(--gray-50);
+      color: var(--black);
+      width: 160px;
+    }
+    .dkim-input:focus { outline: none; border-color: var(--yellow); }
+
+    .presets { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+    .preset-pill {
+      font-size: 11px;
+      font-family: 'IBM Plex Mono', monospace;
+      padding: 4px 11px;
+      border-radius: 20px;
+      border: 1px solid var(--gray-200);
+      background: var(--white);
+      color: var(--gray-600);
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+    .preset-pill:hover { border-color: var(--black); color: var(--black); }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 4px 0 16px;
+    }
+    .divider-line { flex: 1; height: 1px; background: var(--gray-100); }
+    .divider-label { font-size: 11px; font-weight: 600; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap; }
+
+    .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--gray-600); }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .dot-ok { background: var(--green); }
+    .dot-warn { background: var(--amber); }
+    .dot-err { background: var(--red); }
+    .dot-none { background: var(--gray-200); }
+
+    .record-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    @media (max-width: 480px) { .record-grid { grid-template-columns: 1fr; } }
+
+    .record-card {
+      border-radius: var(--radius-md);
+      padding: 13px 15px;
+      border: 1px solid var(--gray-100);
+      background: var(--gray-50);
+    }
+    .record-card.ok { background: var(--green-bg); border-color: #bbf7d0; }
+    .record-card.warn { background: var(--amber-bg); border-color: #fde68a; }
+    .record-card.err { background: var(--red-bg); border-color: #fecaca; }
+
+    .record-card-header {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 7px;
+    }
+    .record-type { font-size: 11px; font-weight: 600; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.5px; }
+    .record-card-header .status-dot { margin-left: auto; }
+
+    .record-value {
+      font-size: 11.5px;
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--gray-800);
+      word-break: break-all;
+      line-height: 1.6;
+      max-height: 72px;
+      overflow-y: auto;
+      margin-bottom: 6px;
+    }
+    .record-empty { font-size: 12px; color: var(--gray-400); font-style: italic; margin-bottom: 6px; }
+    .record-verdict { font-size: 11px; color: var(--gray-600); line-height: 1.5; }
+    .record-card.ok .record-verdict { color: #15803d; }
+    .record-card.warn .record-verdict { color: #92400e; }
+    .record-card.err .record-verdict { color: #b91c1c; }
+
+    .summary-bar {
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .summary-bar.ok { background: var(--green-bg); color: #15803d; border: 1px solid #bbf7d0; }
+    .summary-bar.warn { background: var(--amber-bg); color: #92400e; border: 1px solid #fde68a; }
+    .summary-bar.err { background: var(--red-bg); color: #b91c1c; border: 1px solid #fecaca; }
+    .summary-bar i { font-size: 18px; }
+
+    .empty-state {
+      text-align: center;
+      padding: 36px 0 8px;
+      color: var(--gray-400);
+    }
+    .empty-state i { font-size: 36px; display: block; margin-bottom: 10px; opacity: 0.5; }
+    .empty-state p { font-size: 14px; margin-bottom: 4px; }
+    .empty-state small { font-size: 12px; }
+
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid var(--gray-200);
+      border-top-color: var(--black);
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+      flex-shrink: 0;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 11px;
+      color: var(--gray-400);
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <div class="wordmark">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect width="22" height="22" rx="6" fill="#FFED00"/><rect x="5" y="5" width="5" height="5" rx="1" fill="#000"/><rect x="12" y="5" width="5" height="5" rx="1" fill="#000"/><rect x="5" y="12" width="5" height="5" rx="1" fill="#000"/><rect x="12" y="12" width="5" height="5" rx="1" fill="rgba(0,0,0,0.3)"/></svg>
+    <span class="wordmark-text">Bloomreach <span>Partner Services</span></span>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <i class="ti ti-world-check" aria-hidden="true"></i>
+      <div>
+        <div class="header-title">DNS Checker</div>
+        <div class="header-sub">Validate sending domain configuration for Mailgun</div>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <label class="form-label" for="domainInput">Sending domain</label>
+      <div class="input-row">
+        <input type="text" class="domain-input" id="domainInput" placeholder="e.g. service-email.averys.com" autocomplete="off" spellcheck="false" />
+        <button class="check-btn" id="checkBtn" onclick="runCheck()">
+          <i class="ti ti-search" aria-hidden="true"></i> Check
+        </button>
+      </div>
+
+      <div class="dkim-row">
+        <span class="dkim-label"><i class="ti ti-key" style="font-size:13px;" aria-hidden="true"></i> DKIM selector:</span>
+        <input type="text" class="dkim-input" id="dkimSelector" placeholder="mx" value="mx" autocomplete="off" spellcheck="false" />
+      </div>
+
+      <div class="presets">
+        <span style="font-size:11px;color:var(--gray-400);align-self:center;margin-right:2px;">Quick:</span>
+        <button class="preset-pill" onclick="setDomain('service-email.averys.com')">service-email.averys.com</button>
+        <button class="preset-pill" onclick="setDomain('email.averys.com')">email.averys.com</button>
+      </div>
+
+      <div id="resultsArea" style="display:none;">
+        <div class="divider">
+          <div class="divider-line"></div>
+          <span class="divider-label">DNS records</span>
+          <div class="divider-line"></div>
+        </div>
+
+        <div class="legend">
+          <span class="legend-item"><span class="status-dot dot-ok"></span> Mailgun-confirmed</span>
+          <span class="legend-item"><span class="status-dot dot-warn"></span> Present, needs review</span>
+          <span class="legend-item"><span class="status-dot dot-err"></span> Missing / incorrect</span>
+        </div>
+
+        <div class="record-grid" id="recordGrid"></div>
+        <div id="summaryBar"></div>
+      </div>
+
+      <div id="emptyState" class="empty-state">
+        <i class="ti ti-dns" aria-hidden="true"></i>
+        <p>Enter a sending domain to validate</p>
+        <small>Checks MX, SPF, DKIM &amp; DMARC via Cloudflare DNS</small>
+      </div>
+    </div>
+  </div>
+
+  <footer>Bloomreach Partner Services · DNS checks via Cloudflare DNS</footer>
+</div>
+
+<script>
+  const CF = 'https://cloudflare-dns.com/dns-query';
+
+  function setDomain(d) {
+    document.getElementById('domainInput').value = d;
+    document.getElementById('domainInput').focus();
+  }
+
+  async function dnsQuery(name, type) {
+    try {
+      const r = await fetch(`${CF}?name=${encodeURIComponent(name)}&type=${type}`, {
+        headers: { Accept: 'application/dns-json' }
+      });
+      const j = await r.json();
+      return j.Answer || [];
+    } catch { return []; }
+  }
+
+  function extractTxt(answers) {
+    return answers.filter(a => a.type === 16).map(a => a.data.replace(/"/g, '')).join(' ');
+  }
+
+  function extractMx(answers) {
+    return answers.filter(a => a.type === 15).map(a => a.data).join('\n');
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function analyseRecords(mxVal, spfVal, dkimVal, dmarcVal, selector) {
+    const records = [];
+
+    // MX
+    let mxStatus, mxVerdict;
+    if (!mxVal) {
+      mxStatus = 'err';
+      mxVerdict = 'No MX records found. Add Mailgun MX records to receive bounces and complaints.';
+    } else if (mxVal.toLowerCase().includes('mailgun')) {
+      mxStatus = 'ok';
+      mxVerdict = 'Mailgun MX records correctly configured.';
+    } else {
+      mxStatus = 'warn';
+      mxVerdict = 'MX records found but not pointing to Mailgun. Verify these are correct for your sending setup.';
+    }
+    records.push({ label: 'MX', value: mxVal, status: mxStatus, verdict: mxVerdict });
+
+    // SPF
+    let spfStatus, spfVerdict;
+    if (!spfVal) {
+      spfStatus = 'err';
+      spfVerdict = 'No SPF record found. Add: v=spf1 include:mailgun.org ~all';
+    } else if (spfVal.includes('mailgun.org') || spfVal.includes('mailgun')) {
+      if (spfVal.includes('-all')) {
+        spfStatus = 'ok';
+        spfVerdict = 'SPF includes Mailgun with hard fail (-all). Good.';
+      } else if (spfVal.includes('~all')) {
+        spfStatus = 'ok';
+        spfVerdict = 'SPF includes Mailgun with soft fail (~all). Correctly configured.';
+      } else {
+        spfStatus = 'warn';
+        spfVerdict = 'SPF includes Mailgun but is missing an ~all or -all mechanism at the end.';
+      }
+    } else {
+      spfStatus = 'warn';
+      spfVerdict = 'SPF record exists but does not include mailgun.org. Add include:mailgun.org.';
+    }
+    records.push({ label: 'SPF', value: spfVal, status: spfStatus, verdict: spfVerdict });
+
+    // DKIM
+    let dkimStatus, dkimVerdict;
+    if (!dkimVal) {
+      dkimStatus = 'err';
+      dkimVerdict = `No DKIM record found at ${selector}._domainkey. Add the DKIM TXT record from your Mailgun domain settings.`;
+    } else if (dkimVal.includes('v=DKIM1') && dkimVal.includes('p=')) {
+      dkimStatus = 'ok';
+      dkimVerdict = 'DKIM record found with valid public key.';
+    } else {
+      dkimStatus = 'warn';
+      dkimVerdict = 'A TXT record exists at this selector but does not look like a valid DKIM record.';
+    }
+    records.push({ label: `DKIM (${selector})`, value: dkimVal, status: dkimStatus, verdict: dkimVerdict });
+
+    // DMARC
+    let dmarcStatus, dmarcVerdict;
+    if (!dmarcVal) {
+      dmarcStatus = 'err';
+      dmarcVerdict = 'No DMARC record found. Add a _dmarc TXT record. Minimum: v=DMARC1; p=none; rua=mailto:you@yourdomain.com';
+    } else if (dmarcVal.includes('v=DMARC1')) {
+      if (dmarcVal.includes('p=reject')) {
+        dmarcStatus = 'ok';
+        dmarcVerdict = 'DMARC set to reject — strongest policy. Ensure SPF and DKIM are fully aligned before using this.';
+      } else if (dmarcVal.includes('p=quarantine')) {
+        dmarcStatus = 'ok';
+        dmarcVerdict = 'DMARC set to quarantine. Good policy for active sending domains.';
+      } else if (dmarcVal.includes('p=none')) {
+        dmarcStatus = 'warn';
+        dmarcVerdict = 'DMARC is in monitor mode (p=none). Unauthenticated mail won\'t be rejected. Consider moving to p=quarantine.';
+      } else {
+        dmarcStatus = 'warn';
+        dmarcVerdict = 'DMARC record found but policy is unclear. Check the p= value.';
+      }
+    } else {
+      dmarcStatus = 'warn';
+      dmarcVerdict = 'A TXT record exists at _dmarc but does not appear to be a valid DMARC record.';
+    }
+    records.push({ label: 'DMARC', value: dmarcVal, status: dmarcStatus, verdict: dmarcVerdict });
+
+    return records;
+  }
+
+  function makeCard(record) {
+    const dotClass = `dot-${record.status}`;
+    const valueHtml = record.value
+      ? `<div class="record-value">${escHtml(record.value)}</div>`
+      : `<div class="record-empty">not found</div>`;
+    return `<div class="record-card ${record.status}">
+      <div class="record-card-header">
+        <span class="record-type">${escHtml(record.label)}</span>
+        <span class="status-dot ${dotClass}"></span>
+      </div>
+      ${valueHtml}
+      <div class="record-verdict">${escHtml(record.verdict)}</div>
+    </div>`;
+  }
+
+  function makeSummary(records) {
+    const errCount = records.filter(r => r.status === 'err').length;
+    const warnCount = records.filter(r => r.status === 'warn').length;
+    if (errCount > 0) {
+      return `<div class="summary-bar err"><i class="ti ti-x" aria-hidden="true"></i> ${errCount} missing record${errCount > 1 ? 's' : ''} — domain not ready to send</div>`;
+    } else if (warnCount > 0) {
+      return `<div class="summary-bar warn"><i class="ti ti-alert-triangle" aria-hidden="true"></i> ${warnCount} record${warnCount > 1 ? 's' : ''} need${warnCount === 1 ? 's' : ''} attention before sending</div>`;
+    } else {
+      return `<div class="summary-bar ok"><i class="ti ti-circle-check" aria-hidden="true"></i> All records correctly configured — ready to send</div>`;
+    }
+  }
+
+  async function runCheck() {
+    const domain = document.getElementById('domainInput').value.trim();
+    const selector = document.getElementById('dkimSelector').value.trim() || 'mx';
+    if (!domain) { document.getElementById('domainInput').focus(); return; }
+
+    const btn = document.getElementById('checkBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Checking…';
+
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('resultsArea').style.display = 'block';
+    document.getElementById('recordGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--gray-400);font-size:13px;">Fetching DNS records…</div>';
+    document.getElementById('summaryBar').innerHTML = '';
+
+    const [mxA, spfA, dmarcA, dkimA] = await Promise.all([
+      dnsQuery(domain, 'MX'),
+      dnsQuery(domain, 'TXT'),
+      dnsQuery(`_dmarc.${domain}`, 'TXT'),
+      dnsQuery(`${selector}._domainkey.${domain}`, 'TXT')
+    ]);
+
+    const mxVal = extractMx(mxA);
+    const allTxt = spfA.filter(a => a.type === 16).map(a => a.data.replace(/"/g,''));
+    const spfVal = allTxt.find(v => v.includes('v=spf1')) || '';
+    const dmarcVal = extractTxt(dmarcA);
+    const dkimVal = extractTxt(dkimA);
+
+    const records = analyseRecords(mxVal, spfVal, dkimVal, dmarcVal, selector);
+
+    document.getElementById('recordGrid').innerHTML = records.map(makeCard).join('');
+    document.getElementById('summaryBar').innerHTML = makeSummary(records);
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-search" aria-hidden="true"></i> Check';
+  }
+
+  document.getElementById('domainInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') runCheck();
+  });
+</script>
+</body>
+</html>
